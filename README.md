@@ -1,2 +1,2 @@
-# kodi-client
-Kodi client for your Midarr server
+# kodi-addon
+Kodi addon for your Midarr server
