@@ -12,14 +12,9 @@ provider-name="Midarr Labs">
 <extension point="xbmc.addon.metadata">
   <summary lang="en_GB">Midarr for Kodi</summary>
   <description lang="en_GB">A Midarr video plugin for Kodi mediacenter.</description>
-  <disclaimer lang="en_GB">Public domain movies are provided by publicdomainmovie.net.</disclaimer>
-  <license>GPL-3.0-only</license>
+  <license>MIT</license>
   <assets>
-    <icon>resources/images/icon.png</icon>
-    <fanart>resources/images/fanart.jpg</fanart>
-    <screenshot>resources/images/screenshot-1.jpg</screenshot>
-    <screenshot>resources/images/screenshot-2.jpg</screenshot>
+    <icon>icon.png</icon>
   </assets>
-  <news>Updated with latest artwork metadata</news>
 </extension>
 </addon>
