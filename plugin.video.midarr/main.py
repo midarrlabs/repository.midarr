@@ -30,7 +30,7 @@ def get_url(**kwargs):
     return '{}?{}'.format(URL, urlencode(kwargs))
 
 
-def get_videos():
+def get_videos(page):
     """
     Get the list of video files/streams.
 
@@ -45,12 +45,14 @@ def get_videos():
         "Content-Type": "application/json"
     }
 
-    request = urllib.request.Request("http://localhost:4000/api/movies?token=some-token", headers=headers)
+    request = urllib.request.Request(f"http://localhost:4000/api/movies?token=some-token&page={page}", headers=headers)
 
     with urllib.request.urlopen(request) as response:
         data = response.read()
-        videos = json.loads(data.decode("utf-8"))
-        return videos["items"]
+        response_data = json.loads(data.decode("utf-8"))
+        videos = response_data.get("items", [])
+
+        return videos
 
 
 def list_genres():
@@ -80,7 +82,7 @@ def list_genres():
 
     # Create a URL for a plugin recursive call.
     # Example: plugin://plugin.video.example/?action=listing&genre_index=0
-    url = get_url(action='listing', genre_index=0)
+    url = get_url(action='listing')
     # is_folder = True means that this item opens a sub-list of lower level items.
     is_folder = True
     # Add our item to the Kodi virtual folder listing.
@@ -91,12 +93,11 @@ def list_genres():
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def list_videos(genre_index):
+def list_videos(page):
     """
     Create the list of playable videos in the Kodi interface.
 
-    :param genre_index: the index of genre in the list of movie genres
-    :type genre_index: int
+    :param page:
     """
     # Set plugin category. It is displayed in some skins as the name
     # of the current section.
@@ -105,7 +106,7 @@ def list_videos(genre_index):
     # for this type of content.
     xbmcplugin.setContent(HANDLE, 'movies')
     # Get the list of videos in the category.
-    videos = get_videos()
+    videos = get_videos(page)
     # Iterate through videos.
     for video in videos:
         # Create a list item with a text label
@@ -113,18 +114,23 @@ def list_videos(genre_index):
         # Set graphics (thumbnail, fanart, banner, poster, landscape etc.) for the list item.
         # Here we use only poster for simplicity's sake.
         # In a real-life plugin you may need to set multiple image types.
-        list_item.setArt({'poster': video['poster']})
+        list_item.setArt({
+            'poster': f"http://localhost:4000{ video['poster'] }&token=some-token",
+            'fanart': f"http://localhost:4000{ video['background'] }&token=some-token",
+        })
         # Set additional info for the list item via InfoTag.
         # 'mediatype' is needed for skin to display info for this ListItem correctly.
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType('movie')
         info_tag.setTitle(video['title'])
+        info_tag.setPlot(video['overview'])
+        info_tag.setYear(video['year'])
         info_tag.setGenres(['Movies'])
         # Set 'IsPlayable' property to 'true'.
         # This is mandatory for playable items!
         list_item.setProperty('IsPlayable', 'true')
         # Create a URL for a plugin recursive call.
-        url = get_url(action='play', video='')
+        url = get_url(action='play', video=f"http://localhost:4000{ video['stream'] }&token=some-token")
         # Add the list item to a virtual Kodi folder.
         # is_folder = False means that this item won't open any sub-list.
         is_folder = False
@@ -133,6 +139,11 @@ def list_videos(genre_index):
     # Add sort methods for the virtual folder items
     xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
     xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+    if videos:
+        url = get_url(action='page', page=page + 1)
+        xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=xbmcgui.ListItem(label="Next Page..."), isFolder=True)
+
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(HANDLE)
 
@@ -169,12 +180,19 @@ def router(paramstring):
         # If the plugin is called from Kodi UI without any parameters,
         # display the list of video categories
         list_genres()
+
     elif params['action'] == 'listing':
         # Display the list of videos in a provided category.
-        list_videos(int(params['genre_index']))
+        list_videos(page=1)
+
+    elif params['action'] == 'page':
+        # Display the list of videos in a provided category.
+        list_videos(page=int(params['page']))
+
     elif params['action'] == 'play':
         # Play a video from a provided URL.
         play_video(params['video'])
+
     else:
         # If the provided paramstring does not contain a supported action
         # we raise an exception. This helps to catch coding errors,
