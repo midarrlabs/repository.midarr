@@ -16,6 +16,8 @@ URL = sys.argv[0]
 # Get a plugin handle as an integer number.
 HANDLE = int(sys.argv[1])
 
+SETTINGS = Addon().getSettings()
+
 def get_url(**kwargs):
     """
     Create a URL for calling the plugin recursively from the given set of keyword arguments.
@@ -29,7 +31,7 @@ def get_url(**kwargs):
 
 def get_videos(page):
 
-    request = urllib.request.Request(f"http://localhost:4000/api/movies?token=some-token&page={page}", headers={
+    request = urllib.request.Request(f"{SETTINGS.getString('baseurl')}/api/movies?token={SETTINGS.getString('apitoken')}&page={page}", headers={
         "Content-Type": "application/json"
     })
 
@@ -42,7 +44,6 @@ def get_videos(page):
 
 
 def list_libraries():
-
     list_item = xbmcgui.ListItem()
 
     # Set images for the list item.
@@ -57,7 +58,7 @@ def list_libraries():
     info_tag.setGenres(['Movies'])
 
     # Create a URL for a plugin recursive call.
-    # Example: plugin://plugin.video.example/?action=listing&genre_index=0
+    # Example: plugin://plugin.video.example/?action=listing
     url = get_url(action='listing')
     # is_folder = True means that this item opens a sub-list of lower level items.
     is_folder = True
@@ -83,8 +84,8 @@ def list_videos(page):
         # Here we use only poster for simplicity's sake.
         # In a real-life plugin you may need to set multiple image types.
         list_item.setArt({
-            'poster': f"http://localhost:4000{ video['poster'] }&token=some-token",
-            'fanart': f"http://localhost:4000{ video['background'] }&token=some-token",
+            'poster': f"{SETTINGS.getString('baseurl')}{video['poster']}&token={SETTINGS.getString('apitoken')}",
+            'fanart': f"{SETTINGS.getString('baseurl')}{video['background']}&token={SETTINGS.getString('apitoken')}",
         })
         # Set additional info for the list item via InfoTag.
         # 'mediatype' is needed for skin to display info for this ListItem correctly.
@@ -98,7 +99,7 @@ def list_videos(page):
         # This is mandatory for playable items!
         list_item.setProperty('IsPlayable', 'true')
         # Create a URL for a plugin recursive call.
-        url = get_url(action='play', video=f"http://localhost:4000{ video['stream'] }&token=some-token")
+        url = get_url(action='play', video=f"{SETTINGS.getString('baseurl')}{video['stream']}&token={SETTINGS.getString('apitoken')}")
         # Add the list item to a virtual Kodi folder.
         # is_folder = False means that this item won't open any sub-list.
         is_folder = False
@@ -110,7 +111,8 @@ def list_videos(page):
 
     if videos:
         url = get_url(action='page', page=page + 1)
-        xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=xbmcgui.ListItem(label="Next Page..."), isFolder=True)
+        xbmcplugin.addDirectoryItem(handle=HANDLE, url=url, listitem=xbmcgui.ListItem(label="Next Page..."),
+                                    isFolder=True)
 
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(HANDLE)
@@ -132,10 +134,11 @@ def play_video(path):
     xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
 
 
-def router(paramstring):
-    # Parse a URL-encoded paramstring to the dictionary of
+def router(param_string):
+
+    # Parse a URL-encoded param_string to the dictionary of
     # {<parameter>: <value>} elements
-    params = dict(parse_qsl(paramstring))
+    params = dict(parse_qsl(param_string))
     # Check the parameters passed to the plugin
     if not params:
         # If the plugin is called from Kodi UI without any parameters,
@@ -155,13 +158,13 @@ def router(paramstring):
         play_video(params['video'])
 
     else:
-        # If the provided paramstring does not contain a supported action
+        # If the provided param_string does not contain a supported action
         # we raise an exception. This helps to catch coding errors,
         # e.g. typos in action names.
-        raise ValueError(f'Invalid paramstring: {paramstring}!')
+        raise ValueError(f'Invalid param_string: {param_string}!')
 
 
 if __name__ == '__main__':
     # Call the router function and pass the plugin call parameters to it.
-    # We use string slicing to trim the leading '?' from the plugin call paramstring
+    # We use string slicing to trim the leading '?' from the plugin call param_string
     router(sys.argv[2][1:])
