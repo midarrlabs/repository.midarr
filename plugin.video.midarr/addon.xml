@@ -9,6 +9,7 @@
   <extension point="xbmc.addon.metadata">
     <summary lang="en_GB">Midarr</summary>
     <description lang="en_GB">Official Midarr for Kodi add-on</description>
+    <disclaimer lang="en_GB">https://github.com/midarrlabs/kodi-addon</disclaimer>
     <license>MIT</license>
     <source>https://github.com/midarrlabs/kodi-addon</source>
     <assets>
