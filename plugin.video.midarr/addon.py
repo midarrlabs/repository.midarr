@@ -3,21 +3,18 @@ Compatible with Kodi 20.x "Nexus" and above
 """
 import os
 import sys
-from urllib.parse import urlencode, parse_qsl
 
 import xbmcgui
 import xbmcplugin
 from xbmcaddon import Addon
-from xbmcvfs import translatePath
 import json
 import urllib.request
+from urllib.parse import urlencode, parse_qsl
 
 # Get the plugin url in plugin:// notation.
 URL = sys.argv[0]
 # Get a plugin handle as an integer number.
 HANDLE = int(sys.argv[1])
-# Get addon base path
-ADDON_PATH = translatePath(Addon().getAddonInfo('path'))
 
 def get_url(**kwargs):
     """
@@ -31,21 +28,10 @@ def get_url(**kwargs):
 
 
 def get_videos(page):
-    """
-    Get the list of video files/streams.
 
-    Here you can insert some code that retrieves
-    the list of video streams in the given section from some site or API.
-
-    :return: the list of videos
-    :rtype: list
-    """
-
-    headers = {
+    request = urllib.request.Request(f"http://localhost:4000/api/movies?token=some-token&page={page}", headers={
         "Content-Type": "application/json"
-    }
-
-    request = urllib.request.Request(f"http://localhost:4000/api/movies?token=some-token&page={page}", headers=headers)
+    })
 
     with urllib.request.urlopen(request) as response:
         data = response.read()
@@ -55,19 +41,9 @@ def get_videos(page):
         return videos
 
 
-def list_genres():
-    """
-    Create the list of movie genres in the Kodi interface.
-    """
-    # Set plugin category. It is displayed in some skins as the name
-    # of the current section.
-    xbmcplugin.setPluginCategory(HANDLE, 'movies')
-    # Set plugin content. It allows Kodi to select appropriate views
-    # for this type of content.
-    xbmcplugin.setContent(HANDLE, 'movies')
+def list_libraries():
 
-    # Create a list item with a text label.
-    list_item = xbmcgui.ListItem(label='movies')
+    list_item = xbmcgui.ListItem()
 
     # Set images for the list item.
     # Set additional info for the list item using its InfoTag.
@@ -94,14 +70,6 @@ def list_genres():
 
 
 def list_videos(page):
-    """
-    Create the list of playable videos in the Kodi interface.
-
-    :param page:
-    """
-    # Set plugin category. It is displayed in some skins as the name
-    # of the current section.
-    xbmcplugin.setPluginCategory(HANDLE, 'Movies')
     # Set plugin content. It allows Kodi to select appropriate views
     # for this type of content.
     xbmcplugin.setContent(HANDLE, 'movies')
@@ -165,13 +133,6 @@ def play_video(path):
 
 
 def router(paramstring):
-    """
-    Router function that calls other functions
-    depending on the provided paramstring
-
-    :param paramstring: URL encoded plugin paramstring
-    :type paramstring: str
-    """
     # Parse a URL-encoded paramstring to the dictionary of
     # {<parameter>: <value>} elements
     params = dict(parse_qsl(paramstring))
@@ -179,7 +140,7 @@ def router(paramstring):
     if not params:
         # If the plugin is called from Kodi UI without any parameters,
         # display the list of video categories
-        list_genres()
+        list_libraries()
 
     elif params['action'] == 'listing':
         # Display the list of videos in a provided category.
