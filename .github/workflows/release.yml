@@ -5,7 +5,7 @@ on:
       - 'v*'
 jobs:
   build:
-    if: github.event.base_ref == 'refs/heads/master'
+    if: github.event.base_ref == 'refs/heads/main'
     name: Publish release
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +26,7 @@ jobs:
       - name: Get body
         id: get-body
         run: |
-          description=$(sed '/v[0-9\.]*\s([0-9-]*)/d;/^$/,$d' changelog.txt)
+          description=$(sed '/v[0-9\.]*\s([0-9-]*)/d;/^$/,$d' CHANGELOG.md)
           echo $description
           description="${description//'%'/'%25'}"
           description="${description//$'\n'/'%0A'}"
