@@ -1,5 +1,5 @@
 """
-Compatible with Kodi 20.x "Nexus" and above
+Compatible with Kodi 20.x "Nexus"
 """
 import os
 import sys
