@@ -1,5 +1,5 @@
-<?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.midarr" version="1.0.0" name="Midarr for Kodi" provider-name="midarrlabs">
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.midarr" version="1.0.0" name="Midarr for Kodi" provider-name="midarrlabs">
 <extension point="xbmc.addon.repository" name="Midarr Labs Repository">
   <dir>
     <info compressed="false">https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/repo/zips/addons.xml</info>
@@ -16,4 +16,4 @@
     <icon>icon.png</icon>
   </assets>
 </extension>
-</addon></addons>
+</addon>
