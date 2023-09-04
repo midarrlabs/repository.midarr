@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<addons><addon id="plugin.video.midarr" version="1.0.0" name="Midarr for Kodi" provider-name="midarrlabs">
+<extension point="xbmc.addon.repository" name="Midarr Labs Repository">
+  <dir>
+    <info compressed="false">https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/repo/zips/addons.xml</info>
+    <checksum>https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/repo/zips/addons.xml.md5</checksum>
+    <datadir zip="true">https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/repo/zips/</datadir>
+  </dir>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary>Midarr</summary>
+  <description>Official Midarr for Kodi add-on</description>
+  <disclaimer>https://github.com/midarrlabs/repository.midarr</disclaimer>
+  <platform>all</platform>
+</extension>
+</addon></addons>
