@@ -11,5 +11,8 @@
     <description lang="en_GB">Official Midarr for Kodi add-on</description>
     <disclaimer lang="en_GB">https://github.com/midarrlabs/repository.midarr</disclaimer>
     <source>https://github.com/midarrlabs/repository.midarr</source>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
   </extension>
 </addon>

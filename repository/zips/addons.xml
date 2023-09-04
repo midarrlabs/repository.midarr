@@ -16,5 +16,8 @@
         <summary lang="en">Kodi repository for Midarr addons</summary>
         <description lang="en">Kodi repository for Midarr addons</description>
         <platform>all</platform>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
     </extension>
 </addon></addons>
