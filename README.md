@@ -1,6 +1,6 @@
 ## Midarr for Kodi repository
 
-Contains simple Midarr for Kodi add-on.
+Contains Midarr for Kodi add-on.
 
 ### Installation
 
