@@ -4,8 +4,8 @@
         <import addon="xbmc.addon" version="15.0.0"/>
     </requires>
     <extension point="xbmc.addon.repository" name="release">
-        <info compressed="false">https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/release/addon.xml</info>
-        <checksum>https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/release/addon.xml.md5</checksum>
+        <info compressed="false">https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/release/addons.xml</info>
+        <checksum>https://raw.githubusercontent.com/midarrlabs/repository.midarr/main/release/addons.xml.md5</checksum>
         <datadir zip="true">https://github.com/midarrlabs/repository.midarr/raw/main/release/</datadir>
     </extension>
     <extension point="xbmc.addon.metadata">
