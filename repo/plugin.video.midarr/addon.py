@@ -66,6 +66,10 @@ def list_libraries():
     xbmcplugin.addDirectoryItem(HANDLE, url, list_item, is_folder)
     # Add sort methods for the virtual folder items
     xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
+
+    xbmcplugin.addDirectoryItem(handle=HANDLE, url=get_url(action='search'), listitem=xbmcgui.ListItem(label="Search"),
+                                isFolder=True)
+
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(HANDLE)
 
@@ -134,6 +138,59 @@ def play_video(path):
     xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
 
 
+def search():
+    dialog = xbmcgui.Dialog()
+    user_input = dialog.input("Search", type=xbmcgui.INPUT_ALPHANUM)
+
+    if user_input:
+        request = urllib.request.Request(f"{SETTINGS.getString('baseurl')}/api/search?query={user_input}&token={SETTINGS.getString('apitoken')}", headers={
+            "Content-Type": "application/json"
+        })
+
+        with urllib.request.urlopen(request) as response:
+            data = response.read()
+            response_data = json.loads(data.decode("utf-8"))
+            videos = response_data.get("items", [])
+
+            xbmcplugin.setContent(HANDLE, 'movies')
+
+            # Iterate through videos.
+            for video in videos:
+                # Create a list item with a text label
+                list_item = xbmcgui.ListItem(label=video['title'])
+                # Set graphics (thumbnail, fanart, banner, poster, landscape etc.) for the list item.
+                # Here we use only poster for simplicity's sake.
+                # In a real-life plugin you may need to set multiple image types.
+                list_item.setArt({
+                    'poster': f"{SETTINGS.getString('baseurl')}{video['poster']}&token={SETTINGS.getString('apitoken')}",
+                    'fanart': f"{SETTINGS.getString('baseurl')}{video['background']}&token={SETTINGS.getString('apitoken')}",
+                })
+                # Set additional info for the list item via InfoTag.
+                # 'mediatype' is needed for skin to display info for this ListItem correctly.
+                info_tag = list_item.getVideoInfoTag()
+                info_tag.setMediaType('movie')
+                info_tag.setTitle(video['title'])
+                info_tag.setPlot(video['overview'])
+                info_tag.setYear(video['year'])
+                info_tag.setGenres(['Movies'])
+                # Set 'IsPlayable' property to 'true'.
+                # This is mandatory for playable items!
+                list_item.setProperty('IsPlayable', 'true')
+                # Create a URL for a plugin recursive call.
+                url = get_url(action='play', video=f"{SETTINGS.getString('baseurl')}{video['stream']}&token={SETTINGS.getString('apitoken')}")
+                # Add the list item to a virtual Kodi folder.
+                # is_folder = False means that this item won't open any sub-list.
+                is_folder = False
+                # Add our item to the Kodi virtual folder listing.
+                xbmcplugin.addDirectoryItem(HANDLE, url, list_item, is_folder)
+            # Add sort methods for the virtual folder items
+            xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
+            xbmcplugin.addSortMethod(HANDLE, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+
+            # Finish creating a virtual folder.
+            xbmcplugin.endOfDirectory(HANDLE)
+
+
 def router(param_string):
 
     # Parse a URL-encoded param_string to the dictionary of
@@ -156,6 +213,9 @@ def router(param_string):
     elif params['action'] == 'play':
         # Play a video from a provided URL.
         play_video(params['video'])
+
+    elif params['action'] == 'search':
+        search()
 
     else:
         # If the provided param_string does not contain a supported action
