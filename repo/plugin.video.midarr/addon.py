@@ -10,6 +10,9 @@ from xbmcaddon import Addon
 import json
 import urllib.request
 from urllib.parse import urlencode, parse_qsl
+import xbmc
+import threading
+import time
 
 # Get the plugin url in plugin:// notation.
 URL = sys.argv[0]
@@ -333,6 +336,28 @@ def search():
             # Finish creating a virtual folder.
             xbmcplugin.endOfDirectory(HANDLE)
 
+# Function to simulate a long-running task with a background progress bar
+def simulate_long_task_bg():
+    # Create a background progress dialog
+    progress_dialog = xbmcgui.DialogProgressBG()
+    progress_dialog.create("Simulating Task in Background", "Working...")
+
+    for i in range(101):  # Simulate progress from 0% to 100%
+        if progress_dialog.isFinished():  # Check if the progress should be canceled (optional)
+            progress_dialog.close()
+            return
+        
+        progress_dialog.update(i, f"Progress: {i}%")  # Update the progress bar
+        time.sleep(0.1)  # Simulate work being done (100ms per step)
+
+    # Task finished, close the progress dialog
+    progress_dialog.close()
+    xbmcgui.Dialog().ok("Task Completed", "The task has been successfully completed!")
+
+# Asynchronous wrapper to run the task in a separate thread
+def run_task_async():
+    threading.Thread(target=simulate_long_task_bg).start()
+
 
 def router(param_string):
     # Parse a URL-encoded param_string to the dictionary of
@@ -374,6 +399,9 @@ def router(param_string):
 
     elif params['action'] == 'search':
         search()
+
+    elif params['action'] == 'experimental':
+        run_task_async()
 
     else:
         # If the provided param_string does not contain a supported action

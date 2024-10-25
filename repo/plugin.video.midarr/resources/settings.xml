@@ -33,7 +33,7 @@
             <group id="2">
                 <setting id="test33" type="action" label="30004">
                     <level>0</level>
-                    <data>RunScript(script.globalsearch)</data>
+                    <data>RunPlugin(plugin://plugin.video.midarr/?action=experimental)</data>
                     <control type="button" format="action">
                         <close>true</close>
                     </control>
