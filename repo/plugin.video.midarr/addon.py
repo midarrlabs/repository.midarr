@@ -72,9 +72,8 @@ def get_episodes(itemid, season):
 
 
 def list_seasons(itemid):
-    # Set plugin content. It allows Kodi to select appropriate views
-    # for this type of content.
-    xbmcplugin.setContent(HANDLE, 'series')
+    xbmcplugin.setContent(HANDLE, 'files')
+
     # Get the list of videos in the category.
     videos = get_item(itemid)
     # Iterate through videos.
@@ -141,7 +140,7 @@ def list_libraries():
 def list_series(page):
     # Set plugin content. It allows Kodi to select appropriate views
     # for this type of content.
-    xbmcplugin.setContent(HANDLE, 'series')
+    xbmcplugin.setContent(HANDLE, 'tvshows')
     # Get the list of videos in the category.
     videos = get_videos('series', page)
     # Iterate through videos.
@@ -176,9 +175,7 @@ def list_series(page):
 
 
 def list_episodes(itemid, season):
-    # Set plugin content. It allows Kodi to select appropriate views
-    # for this type of content.
-    xbmcplugin.setContent(HANDLE, 'series')
+    xbmcplugin.setContent(HANDLE, 'episodes')
     # Get the list of videos in the category.
     videos = get_episodes(itemid, season)
     # Iterate through videos.
