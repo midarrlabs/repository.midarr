@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.midarr" version="1.2.1" name="Midarr" provider-name="midarrlabs">
+<addons><addon id="plugin.video.midarr" version="1.3.0" name="Midarr" provider-name="midarrlabs">
   <requires>
     <import addon="xbmc.python" version="3.0.0" />
   </requires>
