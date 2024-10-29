@@ -6,20 +6,21 @@ import sys
 
 import xbmcgui
 import xbmcplugin
-from xbmcaddon import Addon
+import xbmcaddon
 import json
 import urllib.request
 from urllib.parse import urlencode, parse_qsl
 import xbmc
 import threading
 import time
+import xbmcvfs
 
 # Get the plugin url in plugin:// notation.
 URL = sys.argv[0]
 # Get a plugin handle as an integer number.
 HANDLE = int(sys.argv[1])
 
-SETTINGS = Addon().getSettings()
+SETTINGS = xbmcaddon.Addon().getSettings()
 
 
 def get_url(**kwargs):
@@ -45,6 +46,24 @@ def get_videos(mediatype, page):
         videos = response_data.get("items", [])
 
         return videos
+
+def get_videos_2(mediatype, page):
+    # Construct the API request URL with token and page number
+    request = urllib.request.Request(
+        f"{SETTINGS.getString('baseurl')}/api/{mediatype}?token={SETTINGS.getString('apitoken')}&page={page}",
+        headers={"Content-Type": "application/json"}
+    )
+    
+    # Make the API request
+    with urllib.request.urlopen(request) as response:
+        data = response.read()
+        response_data = json.loads(data.decode("utf-8"))
+        
+        # Extract items and total count from the response
+        videos = response_data.get("items", [])
+        total = response_data.get("total", len(videos))  # Default to the count of items if 'total' is missing
+        
+        return videos, total  # Return both videos and total
 
 
 def get_item(itemid):
@@ -336,28 +355,64 @@ def search():
             # Finish creating a virtual folder.
             xbmcplugin.endOfDirectory(HANDLE)
 
-# Function to simulate a long-running task with a background progress bar
-def simulate_long_task_bg():
-    # Create a background progress dialog
+def create_strm_file(movie_name, url):
+    movies_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), 'movies')
+    
+    if not os.path.exists(movies_dir):
+        os.makedirs(movies_dir)
+    
+    strm_file_path = os.path.join(movies_dir, f"{movie_name}.strm")
+    
+    try:
+        with open(strm_file_path, 'w') as strm_file:
+            strm_file.write(url)      
+
+    except Exception as e:
+        xbmc.log(f"Failed to create .strm file: {e}", xbmc.LOGERROR)
+
+def fetch_and_process_videos(mediatype):
     progress_dialog = xbmcgui.DialogProgressBG()
-    progress_dialog.create("Simulating Task in Background", "Working...")
-
-    for i in range(101):  # Simulate progress from 0% to 100%
-        if progress_dialog.isFinished():  # Check if the progress should be canceled (optional)
-            progress_dialog.close()
-            return
+    progress_dialog.create("Processing Videos", "Progress")
+    
+    try:
+        page = 1
+        total_videos = None  # Initialize total_videos to None until we get it from the API
+        processed_videos = 0  # Counter for processed videos
         
-        progress_dialog.update(i, f"Progress: {i}%")  # Update the progress bar
-        time.sleep(0.1)  # Simulate work being done (100ms per step)
+        # Loop through pages of videos
+        while True:
+            videos, total = get_videos_2(mediatype, page)
+            
+            if total_videos is None:
+                total_videos = total  # Set total_videos once on the first page
 
-    # Task finished, close the progress dialog
-    progress_dialog.close()
-    xbmcgui.Dialog().ok("Task Completed", "The task has been successfully completed!")
+            if not videos:  # Stop if no items are returned
+                break
 
-# Asynchronous wrapper to run the task in a separate thread
-def run_task_async():
-    threading.Thread(target=simulate_long_task_bg).start()
+            # Process each video and create .strm files
+            for video in videos:
+                title = video.get("title", "Unknown Title")
+                stream_url = video.get("stream")
+                
+                if stream_url:
+                    create_strm_file(title, f"{SETTINGS.getString('baseurl')}{stream_url}&token={SETTINGS.getString('apitoken')}")
+                
+                processed_videos += 1  # Increment processed videos
+                
+                # Update progress dialog based on total progress
+                progress_percent = (processed_videos / total_videos) * 100
+                progress_dialog.update(int(progress_percent))
+                            
+            page += 1  # Move to the next page
 
+        # Completion notification
+        xbmcgui.Dialog().notification("Task Completed", "All videos have been processed!", xbmcgui.NOTIFICATION_INFO, 3000)
+
+    except Exception as e:
+        xbmc.log(f"Error fetching and processing videos: {e}", xbmc.LOGERROR)
+        xbmcgui.Dialog().notification("Error", "Failed to fetch and process videos", xbmcgui.NOTIFICATION_ERROR, 3000)
+    finally:
+        progress_dialog.close()
 
 def router(param_string):
     # Parse a URL-encoded param_string to the dictionary of
@@ -400,8 +455,8 @@ def router(param_string):
     elif params['action'] == 'search':
         search()
 
-    elif params['action'] == 'experimental':
-        run_task_async()
+    elif params['action'] == 'add_movies':
+        threading.Thread(target=fetch_and_process_videos, args=("movies",)).start()
 
     else:
         # If the provided param_string does not contain a supported action

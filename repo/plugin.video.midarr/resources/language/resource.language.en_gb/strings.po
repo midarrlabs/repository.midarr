@@ -22,5 +22,5 @@ msgid "API token"
 msgstr "API token"
 
 msgctxt "#30004"
-msgid "Run Script"
-msgstr "Run Script"
+msgid "Add movies"
+msgstr "Add movies"

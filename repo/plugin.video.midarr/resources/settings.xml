@@ -31,9 +31,9 @@
     <section id="plugin.video.midarr" label="30001">
         <category id="experimental" label="30001">
             <group id="2">
-                <setting id="test33" type="action" label="30004">
+                <setting id="addmovies" type="action" label="30004">
                     <level>0</level>
-                    <data>RunPlugin(plugin://plugin.video.midarr/?action=experimental)</data>
+                    <data>RunPlugin(plugin://plugin.video.midarr/?action=add_movies)</data>
                     <control type="button" format="action">
                         <close>true</close>
                     </control>
