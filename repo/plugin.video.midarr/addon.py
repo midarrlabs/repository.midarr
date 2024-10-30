@@ -355,8 +355,8 @@ def search():
             # Finish creating a virtual folder.
             xbmcplugin.endOfDirectory(HANDLE)
 
-def create_strm_file(movie_name, url):
-    movies_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), 'movies')
+def create_strm_file(movie_name, url, mediatype):
+    movies_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), mediatype)
     
     if not os.path.exists(movies_dir):
         os.makedirs(movies_dir)
@@ -395,7 +395,7 @@ def fetch_and_process_videos(mediatype):
                 stream_url = video.get("stream")
                 
                 if stream_url:
-                    create_strm_file(title, f"{SETTINGS.getString('baseurl')}{stream_url}&token={SETTINGS.getString('apitoken')}")
+                    create_strm_file(title, f"{SETTINGS.getString('baseurl')}{stream_url}&token={SETTINGS.getString('apitoken')}", mediatype)
                 
                 processed_videos += 1  # Increment processed videos
                 
@@ -411,6 +411,74 @@ def fetch_and_process_videos(mediatype):
     except Exception as e:
         xbmc.log(f"Error fetching and processing videos: {e}", xbmc.LOGERROR)
         xbmcgui.Dialog().notification("Error", "Failed to fetch and process videos", xbmcgui.NOTIFICATION_ERROR, 3000)
+    finally:
+        progress_dialog.close()
+
+import re
+
+def sanitize_filename(name):
+    # Replace invalid filename characters with underscores
+    return re.sub(r'[\/:*?"<>|]', '_', name)
+
+def fetch_and_process_series(mediatype):
+    progress_dialog = xbmcgui.DialogProgressBG()
+    progress_dialog.create("Processing Series", "Progress")
+    
+    try:
+        page = 1
+        total_series = None
+        processed_series = 0
+
+        series_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), mediatype)
+        os.makedirs(series_dir, exist_ok=True)
+
+        while True:
+            series_list, total = get_videos_2(mediatype, page)
+            if total_series is None:
+                total_series = total
+            
+            if not series_list:
+                break
+
+            for series in series_list:
+                series_id = series.get("id")
+                series_title = sanitize_filename(series.get("title", "Unknown Title"))
+                season_count = series.get("seasonCount", 1)
+
+                series_directory = os.path.join(series_dir, series_title)
+                os.makedirs(series_directory, exist_ok=True)
+
+                for season in range(1, season_count + 1):
+                    season_directory = os.path.join(series_directory, f"Season {str(season).zfill(2)}")
+                    os.makedirs(season_directory, exist_ok=True)
+
+                    episodes = get_episodes(series_id, season)
+
+                    for episode_number, episode in enumerate(episodes, start=1):
+                        stream_url = episode.get("stream")
+                        
+                        if stream_url:
+                            filename = f"{series_title} - S{str(season).zfill(2)}E{str(episode_number).zfill(2)}.strm"
+                            file_path = os.path.join(season_directory, filename)
+    
+                            try:
+                                with open(file_path, 'w') as strm_file:
+                                    strm_file.write(f"{SETTINGS.getString('baseurl')}{stream_url}&token={SETTINGS.getString('apitoken')}")      
+                            except Exception as e:
+                                xbmc.log(f"Failed to create .strm file: {e}", xbmc.LOGERROR)
+                        
+                        processed_series += 1
+
+                        progress_percent = (processed_series / total_series) * 100
+                        progress_dialog.update(int(progress_percent))
+
+            page += 1
+
+        xbmcgui.Dialog().notification("Task Completed", "All series have been processed!", xbmcgui.NOTIFICATION_INFO, 3000)
+
+    except Exception as e:
+        xbmc.log(f"Error fetching and processing series: {e}", xbmc.LOGERROR)
+        xbmcgui.Dialog().notification("Error", "Failed to fetch and process series", xbmcgui.NOTIFICATION_ERROR, 3000)
     finally:
         progress_dialog.close()
 
@@ -456,7 +524,10 @@ def router(param_string):
         search()
 
     elif params['action'] == 'add_movies':
-        threading.Thread(target=fetch_and_process_videos, args=("movies",)).start()
+        threading.Thread(target=fetch_and_process_series, args=("movies",)).start()
+    
+    elif params['action'] == 'add_series':
+        threading.Thread(target=fetch_and_process_series, args=("series",)).start()
 
     else:
         # If the provided param_string does not contain a supported action
