@@ -14,6 +14,8 @@ import xbmc
 import threading
 import time
 import xbmcvfs
+import re
+import shutil
 
 # Get the plugin url in plugin:// notation.
 URL = sys.argv[0]
@@ -81,7 +83,7 @@ def get_item(itemid):
 
 def get_episodes(itemid, season):
     request = urllib.request.Request(
-        f"{SETTINGS.getString('baseurl')}/api/series/{itemid}?season={season}&token={SETTINGS.getString('apitoken')}",
+        f"{SETTINGS.getString('baseurl')}/api/series/{itemid}?season={season}&has_file=true&token={SETTINGS.getString('apitoken')}",
         headers={
             "Content-Type": "application/json"
         })
@@ -355,30 +357,24 @@ def search():
             # Finish creating a virtual folder.
             xbmcplugin.endOfDirectory(HANDLE)
 
-def create_strm_file(movie_name, url, mediatype):
-    movies_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), mediatype)
-    
-    if not os.path.exists(movies_dir):
-        os.makedirs(movies_dir)
-    
-    strm_file_path = os.path.join(movies_dir, f"{movie_name}.strm")
-    
-    try:
-        with open(strm_file_path, 'w') as strm_file:
-            strm_file.write(url)      
-
-    except Exception as e:
-        xbmc.log(f"Failed to create .strm file: {e}", xbmc.LOGERROR)
 
 def fetch_and_process_videos(mediatype):
     progress_dialog = xbmcgui.DialogProgressBG()
-    progress_dialog.create("Processing Videos", "Progress")
+    progress_dialog.create("Processing Movies", "Progress")
     
     try:
         page = 1
         total_videos = None  # Initialize total_videos to None until we get it from the API
         processed_videos = 0  # Counter for processed videos
         
+        movies_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), mediatype)
+        
+        # Clear the directory if it exists, then create it
+        if os.path.exists(movies_dir):
+            shutil.rmtree(movies_dir)
+
+        os.makedirs(movies_dir)
+
         # Loop through pages of videos
         while True:
             videos, total = get_videos_2(mediatype, page)
@@ -391,11 +387,18 @@ def fetch_and_process_videos(mediatype):
 
             # Process each video and create .strm files
             for video in videos:
-                title = video.get("title", "Unknown Title")
+                title = sanitize_filename(video.get("title", "Unknown Title"))
                 stream_url = video.get("stream")
                 
                 if stream_url:
-                    create_strm_file(title, f"{SETTINGS.getString('baseurl')}{stream_url}&token={SETTINGS.getString('apitoken')}", mediatype)
+                    strm_file_path = os.path.join(movies_dir, f"{title}.strm")
+    
+                    try:
+                        with open(strm_file_path, 'w') as strm_file:
+                            strm_file.write(f"{SETTINGS.getString('baseurl')}{stream_url}&token={SETTINGS.getString('apitoken')}")      
+
+                    except Exception as e:
+                        xbmc.log(f"Failed to create .strm file: {e}", xbmc.LOGERROR)
                 
                 processed_videos += 1  # Increment processed videos
                 
@@ -414,8 +417,6 @@ def fetch_and_process_videos(mediatype):
     finally:
         progress_dialog.close()
 
-import re
-
 def sanitize_filename(name):
     # Replace invalid filename characters with underscores
     return re.sub(r'[\/:*?"<>|]', '_', name)
@@ -430,6 +431,11 @@ def fetch_and_process_series(mediatype):
         processed_series = 0
 
         series_dir = os.path.join(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')), mediatype)
+        
+        # Clear the directory if it exists
+        if os.path.exists(series_dir):
+            shutil.rmtree(series_dir)
+
         os.makedirs(series_dir, exist_ok=True)
 
         while True:
@@ -524,7 +530,7 @@ def router(param_string):
         search()
 
     elif params['action'] == 'add_movies':
-        threading.Thread(target=fetch_and_process_series, args=("movies",)).start()
+        threading.Thread(target=fetch_and_process_videos, args=("movies",)).start()
     
     elif params['action'] == 'add_series':
         threading.Thread(target=fetch_and_process_series, args=("series",)).start()
